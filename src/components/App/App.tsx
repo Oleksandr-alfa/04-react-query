@@ -1,50 +1,40 @@
-import styles from './App.module.css';
-// import axios from "axios";
+import css from './App.module.css';
+
 import SearchBar from '../SearchBar/SearchBar';
 import { fetchMovies } from '../../services/movieService';
 import MovieGrid from '../MovieGrid/MovieGrid';
 import { useState } from 'react';
 import type { Movie } from '../../types/movie';
 import MovieModal from '../MovieModal/MovieModal';
-import toast, { Toaster } from 'react-hot-toast';
+import  { Toaster } from 'react-hot-toast';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
 import Loader from '../Loader/Loader';
-
-
+import Pagination from '../Pagination/Pagination';
+import { useQuery,  keepPreviousData} from '@tanstack/react-query';
 
 export default function App() {
-  
-  const [movies, setMovies] = useState<Movie[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [isError, setIsError] = useState(false);
-  const [isLoader, setIsLoader] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [currentPage, setPage]=useState(1)
+  
+  const { data, isLoading, isError, isSuccess } = useQuery({
+  queryKey: ['movies', topic, currentPage], 
+    queryFn: () => fetchMovies(topic!, currentPage),  
+    enabled: topic !== '',
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
+});
+
+  const totalPages = data?.total_pages ?? 0;
   
   const handleOrder = async (topic: string) => {
-    setIsError(false);
-    setIsLoader(true);
-    setMovies([]);
-    try {
-      
-      const movies = await fetchMovies(topic);
-      if (movies.length === 0) {
-        toast.error('No movies found for your request.');
-        return;
-      }
-   
-      setMovies(movies);
-    }
-    catch {
-      setIsError(true);
-    } finally {
-      setIsLoader(false);
-    }
+    setTopic(topic);
+    setPage(1);
   }
     const handleSelectMovie = (movie: Movie) => {
-    
       setSelectedMovie(movie);
       setIsModalOpen(true);
-      
     }
   
     const closeModal = () => {
@@ -52,15 +42,18 @@ export default function App() {
       setSelectedMovie(null);
     }
    
-    return <div className={styles.app}>
+    return <div className={css.app}>
       <Toaster/>
       <SearchBar onSubmit={ handleOrder } />
-      {isLoader && <Loader/>}
-      {movies.length > 0 && <MovieGrid movies={movies} onSelect={handleSelectMovie} />}
+      {isLoading && <Loader />}
+      {isSuccess && data.results.length > 0 && totalPages > 1 &&
+        (<><Pagination currentPage={currentPage} totalPages={totalPages} setPage={setPage} />
+          <MovieGrid movies={data.results} onSelect={handleSelectMovie} />
+          </>)
+      }
       {isModalOpen && selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />
       )}
-{isError && <ErrorMessage/>}
-  
+      {isError && <ErrorMessage />}
     </div>
   }
