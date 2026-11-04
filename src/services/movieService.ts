@@ -6,6 +6,7 @@ const myKey = import.meta.env.VITE_TMDB_TOKEN;
 interface MovieHttpResponse {
   results: Movie[];
   total_pages: number;
+  
 }
 
 
