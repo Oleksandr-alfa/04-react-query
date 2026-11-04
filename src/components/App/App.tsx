@@ -23,7 +23,7 @@ const ReactPaginate = (
 type ModuleWithDefault<T> = { default: T };
 
 export default function App() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+ 
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [topic, setTopic] = useState("");
   const [page, setPage] = useState(1)
@@ -44,7 +44,7 @@ export default function App() {
     if (isSuccess && data?.results?.length === 0) {
       toast.error('No movies found for your request.');
     }
-  }
+  },[isSuccess, data]
   )
   const totalPages = data?.total_pages ?? 0;
   
@@ -54,11 +54,11 @@ export default function App() {
   }
     const handleSelectMovie = (movie: Movie) => {
       setSelectedMovie(movie);
-      setIsModalOpen(true);
+      
     }
   
     const closeModal = () => {
-      setIsModalOpen(false);
+     
       setSelectedMovie(null);
     }
    
@@ -79,7 +79,7 @@ previousLabel="←"
 />
     }
       {isSuccess && data.results.length > 0 && <MovieGrid movies={data.results} onSelect={handleSelectMovie} />}
-      {isModalOpen && selectedMovie && (
+      {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />
       )}
       {isError && <ErrorMessage />}
